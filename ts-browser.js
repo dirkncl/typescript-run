@@ -400,8 +400,8 @@ function sideEffectModules_sideEffectUtils_js() {
           const globalsBefore = new Set(Object.keys(window));
           const self = {};
           
-          //const evalResult = eval.apply(self, [jsCode]);
-          const evalResult = Function("return " + jsCode)();
+          const evalResult = eval.apply(self, [jsCode]);
+          //const evalResult = Function("return " + jsCode)();
           
           const newGlobals = Object.keys(window).filter(k => !globalsBefore.has(k));
           
