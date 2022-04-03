@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Typescript-run example</title>
+    
+</head>
+<body>
+    <!-- if type module not support -->
+    <script type="importmap">{"imports": {"tsbrowser": "https://dirkncl.github.io/typescript-run/ts-browser.js"}}</script>
+    
+    <script type="module">
+      /*
+        choice that matches the program flow for typescript version 4.6.2:
+        target : "ES3"|"ES5"|"ES2015"|"ES2016"|"ES2017"|"ES2018"|"ES2019"|"ES2020"|"ES2021"|"ES2022"|"ESNext"|"JSON"
+        module : "None"|"CommonJS"|"AMD"|"UMD"|"System"|"ES2015"|"ES2020"|"ES2022"|"ESNext"|"Node12"|"NodeNext"
+        jsx:  "None"|"Preserve"|"React"|"ReactNative"|"ReactJSX"|"ReactJSXDev"
+      
+      */
+      import {loadModule} from 'tsbrowser';
+
+       var compilerOptions = {
+         //sourceMap: false,
+         //inlineSourceMap: true,
+         moduleResolution: "NodeJs",
+         target: "ESNext",
+         jsx: "React",
+         module: "ESNext"
+       }
+       
+       loadModule('./index.ts', compilerOptions).then(()=> {
+           return 
+       });
+    
+    </script>
+</body>
+</html>
