@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>@gamestdio/easing</title>
+    <link href="https://fonts.googleapis.com/css?family=Raleway" rel="stylesheet">
+    <script type="importmap">{"imports": {"tsbrowser": "https://dirkncl.github.io/typescript-run/ts-browser.js"}}</script>
+    <style>
+        body {
+            font-family: 'Raleway', Arial, Helvetica, sans-serif;
+            text-align: center;
+            padding-top: 2vh;
+        }
+        h1 {
+            font-size: 38px;
+        }
+        a { color: #0096dc; text-decoration: none; }
+        a:hover { color: #007fba; text-decoration: underline; }
+        .examples {
+            margin: 0 auto;
+            margin-top: 32px;
+            display: block;
+            width: 80vw;
+        }
+        .examples > .box {
+            display: inline-block;
+            margin: 0 12px 12px 0;
+        }
+        canvas {
+            border: 1px solid rgba(0, 0, 0, 0.5);
+        }
+    </style>
+  </head>
+  <body>
+    <h1><a href="https://github.com/gamestdio/easing">@gamestdio/easing</a></h1>
+
+    <p>Standalone easing functions for JavaScript / TypeScript.</p>
+
+    <code><pre>npm install @gamestdio/easing</pre></code>
+    <code><pre>import { backInOut } from "@gamestdio/easing";</pre></code>
+
+    <div class="examples"></div>
+
+   <!-- index.html -->
+   <script type="module">
+      //target : "ES3","ES5","ES2015","ES2016","ES2017","ES2018", "ES2019", "ES2020","ES2021","ES2022","ESNext","JSON"
+      //module : "None", "CommonJS", "AMD", "UMD", "System", "ES2015", "ES2020", "ES2022", "ESNext", "Node12" , "NodeNext"
+      //jsx:  "None","Preserve", "React", "ReactNative", "ReactJSX", "ReactJSXDev"
+       var compilerOptions = {
+         //sourceMap: false,
+         //inlineSourceMap: true,
+         moduleResolution: "NodeJs",
+         target: "ESNext",
+         jsx: "React",
+         module: "ESNext"
+       }
+
+       import {loadModule} from "tsbrowser";
+       loadModule('./test.js', compilerOptions).then(indexModule => {
+           return indexModule.default(document.querySelector(".examples"));
+       });
+   </script>
+   
+    <p><a href="https://github.com/gamestdio/easing">@gamestdio/easing</a></p>
+  </body>
+</html>
