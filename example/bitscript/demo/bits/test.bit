@@ -1,0 +1,65 @@
+﻿class Entity {
+  double x = 0;
+  double y = 0;
+  double vx = 0;
+  double vy = 0;
+  World world;
+
+  void update(double seconds);
+}
+
+class Player : Entity {
+  bool left = false;
+  bool right = false;
+  bool jump = false;
+
+  over void update(double seconds) {
+    bool isOnGround = world.isOnGround(this);
+
+    // Update velocity
+    vx = left && !right ? -15 : !left && right ? 15 : 0;
+    if (jump && isOnGround) vy = 50;
+    else vy = vy + world.gravity * seconds;
+
+    // Update position
+    x = x + vx * seconds;
+    y = y + vy * seconds;
+    if (isOnGround && vy < 0) y = 0;
+  }
+}
+
+class World {
+  double gravity = -10;
+  Player player = null;
+
+  // Owned pointers delete the object if they still own
+  // it after the pointer leaves its enclosing scope
+  owned List<owned Entity> entities = new List<owned Entity>();
+
+  void setup() {
+    owned Player p = new Player(this);
+    player = p;
+
+    // Move expressions make ownership transfer explicit
+    entities.push(move p);
+  }
+
+  bool isOnGround(Entity entity) {
+    return entity.y <= 0;
+  }
+}
+
+int main() {
+  // Shared means a reference-counted pointer
+  shared World world = new World();
+  world.setup();
+
+  // Swap in a new player (the old player will be deleted)
+  owned Player player = new Player(world);
+  player.y = 10;
+  int index = world.entities.indexOf(world.player);
+  world.entities.set(index, move player);
+
+  // All allocated objects will automatically be deleted
+  return 0;
+}

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>BitScript Demo</title>
+    <style>
+
+body {
+  position: fixed;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  margin: 0;
+}
+
+#topbar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  height: 39px;
+  line-height: 39px;
+  text-align: center;
+  background: #EEE;
+  border-bottom: 1px solid #777;
+}
+
+.button {
+  margin: 0;
+  display: inline-block;
+  background: #DDD;
+  background: linear-gradient(#FFF, #C7C7C7);
+  border: 1px solid #777;
+  border-left: none;
+  font: 14px/24px 'Helvetica Neue', Helvetica, sans-serif;
+  padding: 0 10px;
+}
+
+.button:first-child {
+  border: 1px solid #777;
+  border-top-left-radius: 5px;
+  border-bottom-left-radius: 5px;
+}
+
+.button:last-child {
+  border-top-right-radius: 5px;
+  border-bottom-right-radius: 5px;
+}
+
+.button.pressed {
+  background: #FFF;
+}
+
+.CodeMirror-sizer {
+  padding-top: 40px;
+  padding-bottom: 400px;
+}
+
+.CodeMirror {
+  border-left: 1px solid #999;
+  padding: 0 4px;
+  font: 12px 'Bitstream Vera Sans Mono', 'DejaVu Sans Mono', Monaco, Consolas, monospace !important;
+}
+
+.title {
+  position: absolute;
+  top: 0;
+  font: bold 16px/40px 'Helvetica Neue', Helvetica, sans-serif;
+  padding: 0 4px;
+}
+
+#topbar, .title {
+  cursor: default;
+  -webkit-user-select: none;
+  -moz-user-select: -moz-none;
+}
+
+    </style>
+    <link rel="stylesheet" href="codemirror.css">
+  </head>
+  <body>
+    <div id="topbar"></div>
+    <script src="../node_modules/cppcodegen/cppcodegen.js"></script>
+    <script src="../node_modules/esprima/esprima.js"></script>
+    <script src="escodegen.browser.js"></script>
+    <script src="source-map.min.js"></script>
+    <script src="codemirror.js"></script>
+    <script type="importmap">{"imports": {"tsbrowser": "https://dirkncl.github.io/typescript-run/ts-browser.js"}}</script>
+    
+   <script type="module">
+       import {loadModule} from 'tsbrowser';
+      //target : "ES3"|"ES5"|"ES2015"|"ES2016"|"ES2017"|"ES2018"|"ES2019"|"ES2020"|"ES2021"|"ES2022"|"ESNext"|"JSON"
+      //module : "None"|"CommonJS"|"AMD"|"UMD"|"System"|"ES2015"|"ES2020"|"ES2022"|"ESNext"|"Node12"|"NodeNext"
+      //jsx:  "None"|"Preserve"|"React"|"ReactNative"|"ReactJSX"|"ReactJSXDev"
+       var compilerOptions = {
+         //sourceMap: false,
+         //inlineSourceMap: true,
+         moduleResolution: "NodeJs",
+         target: "ESNext",
+         //jsx: "React",
+         module: "ESNext"
+       }
+       
+       loadModule('../src/index.js', compilerOptions).then(bitscript => {
+           const {
+            AST,
+            // API
+            Compiler,
+            OutputJS,
+            OutputCPP,
+            OutputAsmJS
+        } = bitscript;
+      
+      CodeMirror.defineMode('custom', function(config, parserConfig) {
+        return {
+          startState: function(basecolumn) {
+            return { indentation: 0, lastChar: '' };
+          },
+      
+          token: function(stream, state) {
+            stream.skipToEnd();
+            state.indentation = stream.indentation();
+            state.lastChar = stream.current().slice(-1);
+          },
+      
+          indent: function(state, textAfter) {
+            var lastChar = textAfter.slice(-1);
+            var shouldIndent = state.lastChar === '{';
+            var shouldDedent = lastChar === '}' && textAfter.indexOf('{') === -1;
+            if (shouldIndent && shouldDedent) return state.indentation;
+            if (shouldDedent) return state.indentation - 2;
+            if (shouldIndent) return state.indentation + 2;
+            return CodeMirror.Pass;
+          },
+      
+          electricChars: '{}'
+        };
+      });
+      
+      function Panel(options) {
+        var that = this;
+      
+        this.name = options.name;
+        this.isVisible = localStorageGet(this.name);
+      
+        // Custom mode to enable indenting/dedenting with { and }
+        this.editor = CodeMirror(document.body, {
+          mode: 'custom',
+          tabSize: 2,
+          lineWrapping: true,
+          readOnly: options.readOnly,
+          autofocus: !options.readOnly
+        });
+      
+        // Wrap lines with an indent
+        this.editor.on('renderLine', function(cm, line, element) {
+          var off = (CodeMirror.countColumn(line.text, null, cm.getOption('tabSize')) + 2) * cm.defaultCharWidth();
+          element.style.textIndent = '-' + off + 'px';
+          element.style.paddingLeft = 4 + off + 'px';
+        });
+      
+        var title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = this.name;
+        this.editor.getScrollerElement().appendChild(title);
+      
+        this.button = document.createElement('div');
+        this.button.textContent = this.name;
+        this.button.onmousedown = function() {
+          that.isVisible = !that.isVisible;
+          localStorageSet(that.name, that.isVisible);
+          distribute();
+          recompile();
+        };
+        topbar.appendChild(this.button);
+      }
+      
+      Panel.prototype.layout = function() {
+        this.button.className = this.isVisible ? 'button pressed' : 'button';
+        this.editor.getWrapperElement().style.display = this.isVisible ? 'block' : 'none';
+      };
+      
+      Panel.prototype.setTextIfVisible = function(callback) {
+        if (this.isVisible) {
+          var text = callback(); // Be lazy for speed
+          this.editor.setValue(text);
+        }
+      };
+      
+      function distribute() {
+        var visible = panels.filter(function(p) { return p.isVisible; });
+        visible.forEach(function(p, i) {
+          var left = Math.round(i / visible.length * innerWidth);
+          var top = 40;
+          var right = Math.round((i + 1) / visible.length * innerWidth);
+          var bottom = innerHeight;
+          var editor = p.editor.getWrapperElement().style;
+          editor.position = 'absolute';
+          editor.left = left - 1 + 'px'; // 1px border on .CodeMirror
+          editor.top = top + 'px';
+          editor.width = right - left - 9 + 'px'; // 4px padding on .CodeMirror and 1px border on next .CodeMirror
+          editor.height = bottom - top + 'px';
+        });
+        panels.forEach(function(p) { p.layout(); });
+      }
+      
+      function panelNamed(name) {
+        return panels.filter(function(p) { return p.name === name })[0];
+      }
+      
+      function printToken(token) {
+        return token.kind + ' ' + JSON.stringify(token.text);
+      }
+      
+      function filter(key, value) {
+        if (key !== 'range' &&
+            key !== 'symbol' &&
+            key !== 'scope' &&
+            key !== 'uniqueID' &&
+            key !== 'computedType') {
+          if (value instanceof AST) {
+            var obj = { kind: value.constructor.name };
+            for (var k in value) {
+              if (value.hasOwnProperty(k)) {
+                obj[k] = value[k];
+              }
+            }
+            return obj;
+          }
+          return value;
+        }
+      }
+      
+      function showTextInFirstVisiblePannel(panels, text) {
+        panels.filter(function(p) { return p.name !== 'BitScript' && p.isVisible; })
+          .forEach(function(p, i) { p.editor.setValue(i === 0 ? text : ''); });
+      }
+      
+      function recompile() {
+        try {
+          var compiler = new Compiler();
+          compiler.addSource('<stdin>', panelNamed('BitScript').editor.getValue());
+          compiler.compile();
+          panelNamed('Tokens').setTextIfVisible(function() { return compiler.tokens.map(printToken).join('\n'); });
+      
+          // If there were error messages, stick error messages in the first pannel
+          // that would otherwise be blank and blank out the rest of the pannels
+          var blankPannels = [];
+          if (compiler.log.errorCount === 0) {
+            var codeAndMap = panelNamed('Source Map').isVisible ? OutputJS.generateWithSourceMap(compiler.module, '.') : null;
+            panelNamed('JavaScript').setTextIfVisible(function() { return (codeAndMap !== null ? codeAndMap.code : OutputJS.generate(compiler.module)) + '\n'; });
+            panelNamed('C++11').setTextIfVisible(function() { return OutputCPP.generate(compiler.module) + '\n'; });
+            panelNamed('asm.js').setTextIfVisible(function() { return OutputAsmJS.generate(compiler.module, 'stdin') + '\n'; });
+            panelNamed('Source Map').setTextIfVisible(function() { return codeAndMap.map + '\n'; });
+          } else {
+            blankPannels.push(panelNamed('JavaScript'));
+            blankPannels.push(panelNamed('C++11'));
+            blankPannels.push(panelNamed('asm.js'));
+            blankPannels.push(panelNamed('Source Map'));
+          }
+          if (compiler.module !== null) {
+            panelNamed('AST').setTextIfVisible(function() { return JSON.stringify(compiler.module, filter, 2); });
+          } else {
+            blankPannels.push(panelNamed('AST'));
+          }
+          if (compiler.log.errorCount > 0) {
+            showTextInFirstVisiblePannel(blankPannels, compiler.log.diagnostics.join('\n\n') + '\n');
+          }
+        } catch (e) {
+          showTextInFirstVisiblePannel(panels, (e.stack || e) + '');
+        }
+      }
+      
+      function changed() {
+        var newValue = panelNamed('BitScript').editor.getValue();
+        if (newValue !== oldValue) {
+          oldValue = newValue;
+          recompile();
+        }
+      }
+      
+      function localStorageGet(key) {
+        return (window.localStorage || {})[key] === 'true';
+      }
+      
+      function localStorageSet(key, value) {
+        (window.localStorage || {})[key] = value ? 'true' : '';
+      }
+      
+      // Set visibility defaults
+      if (!localStorageGet('initialized')) {
+        localStorageSet('BitScript', true);
+        localStorageSet('JavaScript', true);
+        localStorageSet('C++11', true);
+        localStorageSet('initialized', true);
+      }
+      
+      var oldValue = null;
+      var compiler = null;
+      var panels = [
+        new Panel({ name: 'BitScript', readOnly: false }),
+        new Panel({ name: 'JavaScript', readOnly: true }),
+        new Panel({ name: 'C++11', readOnly: true }),
+        new Panel({ name: 'asm.js', readOnly: true }),
+        new Panel({ name: 'AST', readOnly: true }),
+        new Panel({ name: 'Tokens', readOnly: true }),
+        new Panel({ name: 'Source Map', readOnly: true })
+      ];
+      
+
+      
+      panelNamed('BitScript').editor.on('change', changed);
+      panelNamed('BitScript').editor.setValue(example);
+      window.onresize = distribute;
+      distribute();
+      changed();
+    });
+    var example = await getBitsScript(location.search.substr(1)||"./bits/test.bit");
+    async function getBitsScript(url) {
+      return new Promise(function(resolve, reject) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+      
+        xhr.onload = function() {
+            if (xhr.status === 200||xhr.status === 0) {
+                resolve(xhr.response);
+            } else {
+                reject(Error(xhr.statusText));
+            }
+        };
+      
+        xhr.onerror = function() {
+            reject(Error('Network Error'));
+        };
+      
+          xhr.send();
+      });
+    };
+    
+    </script>
+  </body>
+</html>

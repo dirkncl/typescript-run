@@ -1,0 +1,24 @@
+{
+  "name": "bitscript",
+  "description": "An experimental language that compiles to JavaScript and C++",
+  "version": "0.1.0",
+  "bin": {
+    "bitc": "./bitc"
+  },
+  "main": "./bitc",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evanw/bitscript.git"
+  },
+  "dependencies": {
+    "terminal-notifier": "0.1.2",
+    "cppcodegen": "0.1.0",
+    "escodegen": "0.0.26",
+    "esprima": "1.0.3"
+  },
+  "devDependencies": {
+    "source-map-support": "*",
+    "typescript": "0.9.1",
+    "mocha": "1.12.0"
+  }
+}
